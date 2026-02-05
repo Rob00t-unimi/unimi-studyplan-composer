@@ -12,9 +12,11 @@ createApp({
         const data = ref({ exams: [], rules: null });
         const pm = ref(null); // PlanManager instance
 
-        // Reactive state for UI
+        const currentYear = new Date().getFullYear();
+        const academicYearDefault = `${currentYear - 1}/${currentYear}`;
+
         const state = reactive({
-            year: '2025/2026',
+            year: academicYearDefault, 
             curriculum: 'FBA',
             plan: [],
             validation: {}
@@ -75,6 +77,18 @@ createApp({
             return groups;
         });
 
+        const academicYears = computed(() => {
+            const years = [];
+            const startYear = 2014; // Inizio storico F94
+            const endYear = new Date().getFullYear();   // Orizzonte futuro per pianificazione
+            
+            for (let i = startYear; i <= endYear; i++) {
+                const nextYear = (i + 1).toString();
+                years.push(`${i}/${nextYear}`);
+            }
+            return years.reverse(); 
+        });
+
         // Initialize
         onMounted(async () => {
             const loaded = await loadData();
@@ -94,6 +108,8 @@ createApp({
                     // Update reactive state
                     state.year = parsed.year;
                     state.curriculum = parsed.curriculum;
+
+                    initialized.value = true;
                 } catch (e) {
                     console.error("Failed to restore state", e);
                     pm.value.initDefaults();
@@ -234,6 +250,9 @@ createApp({
             }
         }
 
+        // Dentro setup()
+
+
         return {
             loading,
             initialized,
@@ -255,7 +274,8 @@ createApp({
             getExamStatusClass,
             getPillarStyle,
             getNextAvailability,
-            getDisplayTables
+            getDisplayTables,
+            academicYears
         };
     }
 }).mount('#app');
