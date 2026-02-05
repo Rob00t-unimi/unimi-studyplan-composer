@@ -1,4 +1,14 @@
+/**
+ * Manages the study plan logic, including adding/removing exams, validating rules,
+ * and handling curriculum specific requirements.
+ */
 export class PlanManager {
+  /**
+   * Creates an instance of PlanManager.
+   * @param {Array} exams - List of available exams.
+   * @param {Object} rules - The degree requirements and rules.
+   * @param {Function} t - Translation function.
+   */
   constructor(exams, rules, t) {
     this.allExams = exams;
     this.rules = rules;
@@ -8,15 +18,27 @@ export class PlanManager {
     this.plan = [];
   }
 
+  /**
+   * Sets the academic year.
+   * @param {string} year - The academic year to set (e.g., "2025/2026").
+   */
   setYear(year) {
     this.year = year;
   }
 
+  /**
+   * Sets the curriculum and migrates the current plan to the new curriculum.
+   * @param {string} curriculum - The curriculum code (e.g., "FBA", "F94").
+   */
   setCurriculum(curriculum) {
     this.curriculum = curriculum;
     this.migratePlan();
   }
 
+  /**
+   * Migrates the current plan items to fit the new curriculum structure.
+   * Re-evaluates allowed tables for each exam.
+   */
   migratePlan() {
     const newPlan = [];
     for (const item of this.plan) {
@@ -44,6 +66,11 @@ export class PlanManager {
     this.rebalanceBuckets();
   }
 
+  /**
+   * Determines the allowed tables for a given exam based on the current curriculum.
+   * @param {Object} exam - The exam object.
+   * @returns {Array<string>} List of allowed table names.
+   */
   getAllowedTables(exam) {
     const raw = exam.rawTable || "";
     const parts = raw.split("|").map((s) => s.trim());
@@ -57,6 +84,11 @@ export class PlanManager {
     }
   }
 
+  /**
+   * Checks if an exam is available in the current academic year.
+   * @param {Object} exam - The exam object.
+   * @returns {boolean} True if the exam is available, false otherwise.
+   */
   isExamAvailable(exam) {
     const avail = exam.availability;
     if (!avail || avail.toLowerCase() === "enabled") return true;
@@ -78,6 +110,11 @@ export class PlanManager {
     return true;
   }
 
+  /**
+   * Gets information about the next availability of an exam.
+   * @param {Object} exam - The exam object.
+   * @returns {string|null} Localized availability info or null if available.
+   */
   getNextAvailabilityInfo(exam) {
     const avail = exam.availability;
     if (!avail || avail.toLowerCase() === "enabled") return null;
@@ -96,6 +133,12 @@ export class PlanManager {
     return avail;
   }
 
+  /**
+   * Adds an exam to the plan.
+   * @param {Object} exam - The exam to add.
+   * @param {string|null} targetTable - Specific table to add the exam to (optional).
+   * @returns {boolean} True if added successfully, false if already in plan.
+   */
   addExam(exam, targetTable = null) {
     if (this.plan.some((p) => p.examId === exam.id)) return false;
 
@@ -117,6 +160,12 @@ export class PlanManager {
     return true;
   }
 
+  /**
+   * Adds a custom (external) exam to the plan.
+   * @param {string} name - Name of the custom exam.
+   * @param {number|string} cfu - Number of credits.
+   * @param {string} table - Table to assign (defaults to "Facoltativi").
+   */
   addCustomExam(name, cfu, table = "Facoltativi") {
     this.plan.push({
       id: "custom-" + Date.now(),
@@ -129,6 +178,11 @@ export class PlanManager {
     this.rebalanceBuckets();
   }
 
+  /**
+   * Removes an exam from the plan by its plan item ID.
+   * Mandatory exams cannot be removed.
+   * @param {string} planItemId - The ID of the plan item to remove.
+   */
   removeExam(planItemId) {
     const item = this.plan.find((p) => p.id === planItemId);
     if (item && item.table === "Obbligatori") return;
@@ -137,6 +191,12 @@ export class PlanManager {
     this.rebalanceBuckets();
   }
 
+  /**
+   * Moves a plan item to a different table.
+   * @param {string} planItemId - The ID of the plan item.
+   * @param {string} newTable - The target table.
+   * @returns {boolean} True if moved, false if move is not allowed.
+   */
   moveExam(planItemId, newTable) {
     const item = this.plan.find((p) => p.id === planItemId);
     if (
@@ -155,12 +215,16 @@ export class PlanManager {
     return true;
   }
 
+  /**
+   * Rebalances the exams across tables based on rules and limits.
+   * Automatically moves exams between tables to satisfy requirements.
+   */
   rebalanceBuckets() {
     const common = this.rules.degree_requirements.common_rules;
     const progRules =
       this.rules.degree_requirements.programs[this.curriculum].curriculum_rules;
 
-    // 1. Mappiamo i limiti e identifichiamo le regole di somma (es. BC)
+    // 1. Map limits and identify sum rules (e.g., BC)
     const limits = {};
     let minSumBC = 0;
     progRules.forEach((r) => {
@@ -180,7 +244,7 @@ export class PlanManager {
       const allowed = item.isCustom ? [] : this.getAllowedTables(exam);
       let assigned = false;
 
-      // --- TENTATIVO 1: Tabelle di indirizzo (A, B, C...) ---
+      // --- ATTEMPT 1: Curriculum tables (A, B, C...) ---
       for (const t of allowed) {
         const currentInT = newPlan
           .filter((p) => p.table === t)
@@ -189,11 +253,11 @@ export class PlanManager {
           .filter((p) => p.table === "B" || p.table === "C")
           .reduce((s, p) => s + p.cfu, 0);
 
-        // CONDIZIONE RESTRITTIVA:
-        // Entra nella tabella se non ha raggiunto il minimo individuale...
+        // RESTRICTIVE CONDITION:
+        // Enter table if individual min is not reached...
         const underIndividualMin = currentInT < (limits[t] || 0);
 
-        // ...OPPURE se è un'eccezione B/C per raggiungere i 48 CFU totali
+        // ...OR if it's a B/C exception to reach total 48 CFU
         const isBCException =
           (t === "B" || t === "C") && currentBCSum < minSumBC;
 
@@ -204,7 +268,7 @@ export class PlanManager {
         }
       }
 
-      // --- TENTATIVO 2: Facoltativi (esattamente 12 CFU) ---
+      // --- ATTEMPT 2: Optional (exactly 12 CFU) ---
       if (!assigned) {
         const currentInFac = newPlan
           .filter((p) => p.table === "Facoltativi")
@@ -215,8 +279,8 @@ export class PlanManager {
         }
       }
 
-      // --- TENTATIVO 3: Fuori Piano ---
-      // Se non è servito a colmare i minimi o la regola B+C, va fuori piano
+      // --- ATTEMPT 3: Out of Plan ---
+      // If not used to fill minimums or B+C rule, it goes out of plan
       if (!assigned) {
         item.table = "Fuori Piano";
       }
@@ -227,6 +291,10 @@ export class PlanManager {
     this.plan = newPlan;
   }
 
+  /**
+   * Validates the current plan against the rules.
+   * @returns {Object} Validation report containing totals, table status, and error messages.
+   */
   validate() {
     const common = this.rules.degree_requirements.common_rules;
     const report = {
@@ -248,14 +316,14 @@ export class PlanManager {
       report.tables[item.table].current += item.cfu;
     });
 
-    // Validazione Standard (Obbligatori e Facoltativi)
+    // Standard Validation (Mandatory and Optional)
     report.tables["Obbligatori"].min = common.mandatory_exams.reduce(
       (s, e) => s + e.credits,
       0,
     );
     report.tables["Facoltativi"].min = common.free_exams_credits;
 
-    // Carichiamo regole dal JSON
+    // Load rules from JSON
     const progRules =
       this.rules.degree_requirements.programs[this.curriculum].curriculum_rules;
     progRules.forEach((rule) => {
@@ -292,7 +360,7 @@ export class PlanManager {
       }
     });
 
-    // Validazione messaggi base
+    // Basic messages validation
     if (
       report.tables["Obbligatori"].current < report.tables["Obbligatori"].min
     ) {
@@ -312,11 +380,17 @@ export class PlanManager {
     return report;
   }
 
+  /**
+   * Resets the plan to its default state.
+   */
   reset() {
     this.plan = [];
     this.initDefaults();
   }
 
+  /**
+   * Initializes the plan with mandatory exams.
+   */
   initDefaults() {
     const mandatory =
       this.rules.degree_requirements.common_rules.mandatory_exams;

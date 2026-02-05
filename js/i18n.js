@@ -1,16 +1,23 @@
 const { ref } = Vue;
 
+/**
+ * Reactive reference for the current language.
+ * @type {import('vue').Ref<string>}
+ */
 export const currentLang = ref('it');
 
+/**
+ * Dictionary of localized messages.
+ * Contains translations for Italian ('it') and English ('en').
+ * @type {Object}
+ */
 export const messages = {
     it: {
-        // Header
         attention: "Attenzione",
         disclaimer: "Le disponibilità degli esami potrebbero essere inesatte. È  consigliato ricontrollare gli esami e le regole ufficiali sul",
         ateneo_website: "sito web di Ateneo",
         disclaimer_suffix: "Questo tool è un supporto alla semplificazione e non sostituisce gli strumenti ufficiali.",
         
-        // Onboarding
         loading: "Caricamento dati...",
         configure_plan: "Configura il tuo Piano",
         select_year_curriculum: "Seleziona l'anno di riferimento e il tuo ordinamento.",
@@ -20,7 +27,6 @@ export const messages = {
         f94_description: "F94 (Immatricolati dal 2014/15 al 2024/25)",
         start_composition: "Inizia la composizione",
         
-        // Sidebar
         your_plan: "Il tuo Piano",
         total_cfu_official: "CFU Totali",
         table: "Tabella",
@@ -30,7 +36,6 @@ export const messages = {
         ok: "OK",
         no_exam_selected: "Nessun esame selezionato.",
         
-        // Matrix / Main
         main_title: "Informatica Magistrale",
         search_placeholder: "Cerca esame per nome...",
         download_csv: "Scarica CSV",
@@ -42,11 +47,9 @@ export const messages = {
         q2: "Quadrimestre 2",
         q3: "Quadrimestre 3",
         
-        // Footer
         footer_repo: "Repo",
         footer_portfolio: "Portfolio",
         
-        // Logic / Validation / Dynamic
         Obbligatori: "Obbligatori",
         Facoltativi: "Facoltativi",
         "Fuori Piano": "Fuori Piano",
@@ -69,19 +72,16 @@ export const messages = {
         reset_confirm: "Sei sicuro di voler resettare il piano? Perderai tutte le selezioni effettuate.",
         facoltativo_label: "Facoltativo",
         
-        // CSV
         csv_mandatory: "Mandatory",
         csv_extra: "Extra",
         csv_curricolar: "Curricolar"
     },
     en: {
-        // Header
         attention: "Warning",
         disclaimer: "Exam availability might be inaccurate. It is always good practice to double-check official exams and rules on the",
         ateneo_website: "University website",
         disclaimer_suffix: "This tool is a support for simplification and does not replace official tools.",
         
-        // Onboarding
         loading: "Loading data...",
         configure_plan: "Configure your Plan",
         select_year_curriculum: "Select the reference year and your curriculum.",
@@ -91,7 +91,6 @@ export const messages = {
         f94_description: "F94 (Enrolled from 2014/15 to 2024/25)",
         start_composition: "Start composition",
         
-        // Sidebar
         your_plan: "Your Plan",
         total_cfu_official: "Total CFU",
         table: "Table",
@@ -101,7 +100,6 @@ export const messages = {
         ok: "OK",
         no_exam_selected: "No exam selected.",
         
-        // Matrix / Main
         main_title: "Master's Degree in Computer Science",
         search_placeholder: "Search exam by name...",
         download_csv: "Download CSV",
@@ -113,11 +111,9 @@ export const messages = {
         q2: "Term 2",
         q3: "Term 3",
         
-        // Footer
         footer_repo: "Repo",
         footer_portfolio: "Portfolio",
         
-        // Logic / Validation / Dynamic
         Obbligatori: "Mandatory",
         Facoltativi: "Optional",
         "Fuori Piano": "Out of Plan",
@@ -140,13 +136,18 @@ export const messages = {
         reset_confirm: "Are you sure you want to reset the plan? You will lose all selections made.",
         facoltativo_label: "Optional",
         
-        // CSV
         csv_mandatory: "Mandatory",
         csv_extra: "Extra",
         csv_curricolar: "Curricolar"
     }
 };
 
+/**
+ * Translates a key into the current language.
+ * @param {string} key - The key to translate.
+ * @param {Object} [params={}] - Parameters to interpolate into the translation string (e.g., {name: 'Val'}).
+ * @returns {string} The translated string or the key if not found.
+ */
 export function t(key, params = {}) {
     let text = messages[currentLang.value][key];
     if (text === undefined) return key;
@@ -157,6 +158,9 @@ export function t(key, params = {}) {
     return text;
 }
 
+/**
+ * Toggles the current language between Italian ('it') and English ('en').
+ */
 export function toggleLang() {
     currentLang.value = currentLang.value === 'it' ? 'en' : 'it';
 }
