@@ -147,44 +147,48 @@
                 </div>
 
                 <div class="matrix-grid">
-                    <!-- Headers -->
-                    <div class="matrix-header" style="z-index:20; left:0;">Pillars</div>
+                    <div class="matrix-header" style="z-index:25; left:0;">Pillar / Subpillar</div>
                     <div class="matrix-header">Quadrimestre 1</div>
                     <div class="matrix-header">Quadrimestre 2</div>
                     <div class="matrix-header">Quadrimestre 3</div>
 
-                    <!-- Rows -->
-                    <template v-for="row in matrix" :key="row.name">
-                        <div class="pillar-row-header" :style="getPillarStyle(row.name)">
-                            {{ row.name }}
+                    <template v-for="pillar in matrix" :key="pillar.name">
+                        <div class="pillar-group-row" :style="getPillarStyle(pillar.name)">
+                            {{ pillar.name }}
                         </div>
-                        <div v-for="period in row.periods" :key="period.id" class="matrix-cell">
-                            <div v-for="exam in period.exams" :key="exam.id"
-                                 class="exam-card"
-                                 :class="getExamStatusClass(exam)"
-                                 :style="getPillarStyle(row.name)"
-                                 @click="toggleExam(exam)">
 
-                                <div class="exam-info">
-                                    <span style="font-weight:600">{{ exam.name }}</span>
-                                    <a v-if="exam.link" :href="exam.link" target="_blank" @click.stop class="exam-link" style="color:var(--primary)">
-                                        <i class="ph ph-arrow-square-out"></i>
-                                    </a>
-                                </div>
-                                <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.25rem;">
-                                    {{ exam.cfu }} CFU
-                                </div>
-                                <div class="exam-actions">
-                                    <span class="tag" :class="{ 'tag-optional': getDisplayTables(exam) === 'Facoltativo' }">
-                                        {{ getDisplayTables(exam) }}
-                                    </span>
-                                    <div v-if="!isAvailable(exam)" class="availability-warning">
-                                        <i class="ph ph-calendar-blank"></i>
-                                        {{ getNextAvailability(exam) }}
+                        <template v-for="sub in pillar.subpillars" :key="sub.name">
+                            <div class="subpillar-row-header">
+                                {{ sub.name }}
+                            </div>
+                            <div v-for="period in sub.periods" :key="period.id" class="matrix-cell">
+                                <div v-for="exam in period.exams" :key="exam.id"
+                                    class="exam-card"
+                                    :class="getExamStatusClass(exam)"
+                                    :style="getPillarStyle(pillar.name)"
+                                    @click="toggleExam(exam)">
+
+                                    <div class="exam-info">
+                                        <span style="font-weight:600">{{ exam.name }}</span>
+                                        <a v-if="exam.link" :href="exam.link" target="_blank" @click.stop class="exam-link" style="color:var(--primary)">
+                                            <i class="ph ph-arrow-square-out"></i>
+                                        </a>
+                                    </div>
+                                    <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.25rem;">
+                                        {{ exam.cfu }} CFU
+                                    </div>
+                                    <div class="exam-actions">
+                                        <span class="tag" :class="{ 'tag-optional': getDisplayTables(exam) === 'Facoltativo' }">
+                                            {{ getDisplayTables(exam) }}
+                                        </span>
+                                        <div v-if="!isAvailable(exam)" class="availability-warning">
+                                            <i class="ph ph-calendar-blank"></i>
+                                            {{ getNextAvailability(exam) }}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </template>
                     </template>
                 </div>
             </div>

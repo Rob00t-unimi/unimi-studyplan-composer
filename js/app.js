@@ -26,26 +26,32 @@ createApp({
             return Array.from(p).sort();
         });
 
-        // Matrix: [ { name: 'Pillar', periods: [ { id: 1, exams: [] }, ... ] } ]
         const matrix = computed(() => {
             if (!data.value.exams) return [];
 
-            const m = pillars.value.map(pName => {
-                const periods = [1, 2, 3].map(period => {
-                    const examsInCell = data.value.exams.filter(e =>
-                        (e.pillar === pName || (!e.pillar && pName === 'Other')) &&
-                        e.period === period
-                    );
+            const pMap = {};
 
-                    // Sort exams: Available first, then disabled
-                    return {
-                        id: period,
-                        exams: examsInCell.sort((a, b) => a.name.localeCompare(b.name))
-                    };
-                });
-                return { name: pName, periods };
+            data.value.exams.forEach(e => {
+                const pName = e.pillar || 'Other';
+                const sName = e.subpillar || 'General';
+                
+                if (!pMap[pName]) pMap[pName] = {};
+                if (!pMap[pName][sName]) pMap[pName][sName] = { 1: [], 2: [], 3: [] };
+                
+                pMap[pName][sName][e.period].push(e);
             });
-            return m;
+
+            // Trasformiamo la mappa in un array ordinato per il template
+            return Object.keys(pMap).sort().map(pName => ({
+                name: pName,
+                subpillars: Object.keys(pMap[pName]).sort().map(sName => ({
+                    name: sName,
+                    periods: [1, 2, 3].map(pId => ({
+                        id: pId,
+                        exams: pMap[pName][sName][pId].sort((a, b) => a.name.localeCompare(b.name))
+                    }))
+                }))
+            }));
         });
 
         const sortedTables = computed(() => {
