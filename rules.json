@@ -2,6 +2,7 @@
   "degree_requirements": {
     "common_rules": {
       "total_credits": 120,
+      "free_exams_credits": 12,
       "mandatory_exams": [
         {
           "name": "English Placement Test",
