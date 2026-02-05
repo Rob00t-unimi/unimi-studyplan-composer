@@ -1,4 +1,9 @@
-
+/**
+ * Parses CSV text containing exam data.
+ * Uses PapaParse if available, otherwise falls back to a minimal internal parser.
+ * @param {string} csvText - The raw CSV string.
+ * @returns {Array<Object>} List of processed exam objects.
+ */
 export function parseExams(csvText) {
     if (typeof Papa === 'undefined') {
         return minimalCSVParse(csvText);
@@ -17,6 +22,12 @@ export function parseExams(csvText) {
     return results.data.map(processExamRow);
 }
 
+/**
+ * Minimal CSV parser implementation for fallback purposes.
+ * Handles basic comma separation and quoted fields.
+ * @param {string} text - The raw CSV string.
+ * @returns {Array<Object>} List of processed exam objects.
+ */
 function minimalCSVParse(text) {
     const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
     const headers = lines[0].split(',').map(h => h.trim());
@@ -52,9 +63,14 @@ function minimalCSVParse(text) {
     return data;
 }
 
+/**
+ * Transforms a raw CSV row object into a structured exam object.
+ * @param {Object} row - Key-value pair row from CSV parser.
+ * @returns {Object} Structured exam object with normalized fields.
+ */
 function processExamRow(row) {
     return {
-        id: row['Exams'], // Use name as ID
+        id: row['Exams'],
         name: row['Exams'],
         link: row['link'],
         cfu: parseInt(row['CFU']) || 6,
@@ -69,6 +85,10 @@ function processExamRow(row) {
     };
 }
 
+/**
+ * Fetches and loads application data (exams and rules).
+ * @returns {Promise<{exams: Array, rules: Object|null}>} A promise resolving to an object containing exams and rules.
+ */
 export async function loadData() {
     try {
         const [examsResponse, rulesResponse] = await Promise.all([

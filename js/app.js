@@ -5,6 +5,10 @@ import { t, currentLang, toggleLang } from "./i18n.js";
 const { createApp, ref, computed, reactive, onMounted, watch } = Vue;
 
 createApp({
+  /**
+   * Sets up the Vue application logic.
+   * Initializes state, loads data, and defines action handlers.
+   */
   setup() {
     const loading = ref(true);
     const initialized = ref(false);
@@ -26,9 +30,12 @@ createApp({
       validation: {},
       newExamName: "",
       newExamCFU: 6,
-      searchQuery: "", // <--- AGGIUNTO: stringa di ricerca
+      searchQuery: "",
     });
 
+    /**
+     * Computed property for pillars list derived from loaded exams.
+     */
     const pillars = computed(() => {
       if (!data.value.exams) return [];
       const p = new Set(
@@ -37,13 +44,17 @@ createApp({
       return Array.from(p).sort();
     });
 
+    /**
+     * Computed property for the exam matrix, grouped by pillar, subpillar, and period.
+     * Filters exams based on the search query.
+     */
     const matrix = computed(() => {
       if (!data.value.exams) return [];
 
       const pMap = {};
       const query = state.searchQuery.toLowerCase().trim();
 
-      // Filtriamo gli esami prima di raggrupparli
+      // Filter exams before grouping
       const filteredExams = data.value.exams.filter((e) => {
         return e.name.toLowerCase().includes(query);
       });
@@ -76,6 +87,9 @@ createApp({
         }));
     });
 
+    /**
+     * Computed property for the table headers based on curriculum.
+     */
     const sortedTables = computed(() => {
       if (state.curriculum === "FBA") {
         return ["Obbligatori", "1", "2", "Facoltativi", "Fuori Piano"];
@@ -83,6 +97,9 @@ createApp({
       return ["Obbligatori", "A", "B", "C", "Facoltativi", "Fuori Piano"];
     });
 
+    /**
+     * Computed property for grouping plan items by table.
+     */
     const groupedPlan = computed(() => {
       const groups = {};
       sortedTables.value.forEach((t) => (groups[t] = []));
@@ -94,10 +111,13 @@ createApp({
       return groups;
     });
 
+    /**
+     * Computed property for generating a list of academic years.
+     */
     const academicYears = computed(() => {
       const years = [];
       const startYear = 2014;
-      const endYear = new Date().getFullYear(); // Orizzonte futuro per pianificazione
+      const endYear = new Date().getFullYear(); // Future horizon for planning
 
       for (let i = startYear; i <= endYear; i++) {
         const nextYear = (i + 1).toString();
@@ -139,6 +159,9 @@ createApp({
       loading.value = false;
     });
 
+    /**
+     * Syncs the local reactive state with the PlanManager instance.
+     */
     function refreshState() {
       if (!pm.value) return;
       state.plan = [...pm.value.plan];
@@ -147,6 +170,9 @@ createApp({
       saveState();
     }
 
+    /**
+     * Persists the current state to Local Storage.
+     */
     function saveState() {
       const toSave = {
         year: state.year,
@@ -156,18 +182,29 @@ createApp({
       localStorage.setItem("studyPlanState", JSON.stringify(toSave));
     }
 
+    /**
+     * Sets the academic year and updates the plan manager.
+     * @param {string} y - The academic year string.
+     */
     function setYear(y) {
       state.year = y;
       pm.value.setYear(y);
       refreshState();
     }
 
+    /**
+     * Sets the curriculum and updates the plan manager.
+     * @param {string} c - The curriculum code.
+     */
     function setCurriculum(c) {
       state.curriculum = c;
       pm.value.setCurriculum(c);
       refreshState();
     }
 
+    /**
+     * Initializes the planning phase by setting year and curriculum.
+     */
     function startPlan() {
       setYear(state.year);
       setCurriculum(state.curriculum);
@@ -175,10 +212,11 @@ createApp({
     }
 
     // Actions
+    /**
+     * Toggles an exam's presence in the plan.
+     * @param {Object} exam - The exam object to toggle.
+     */
     function toggleExam(exam) {
-      // RIMOSSO: if (!isAvailable(exam)) return;
-      // Ora permettiamo l'aggiunta anche se isAvailable è false
-
       const inPlan = state.plan.find((p) => p.examId === exam.id);
       if (inPlan) {
         pm.value.removeExam(inPlan.id);
@@ -188,21 +226,34 @@ createApp({
       refreshState();
     }
 
+    /**
+     * Removes an item from the plan.
+     * @param {string} id - The plan item ID.
+     */
     function removePlanItem(id) {
       pm.value.removeExam(id);
       refreshState();
     }
 
+    /**
+     * Moves a plan item to a target table.
+     * @param {string} id - The plan item ID.
+     * @param {string} targetTable - The destination table name.
+     */
     function movePlanItem(id, targetTable) {
       pm.value.moveExam(id, targetTable);
       refreshState();
     }
 
+    /**
+     * Adds a custom external exam to the plan.
+     * Uses state values for name and CFU.
+     */
     function addCustom() {
       if (!state.newExamName || !state.newExamCFU) return;
       pm.value.addCustomExam(state.newExamName, state.newExamCFU);
 
-      // Reset dei campi dopo l'aggiunta
+      // Reset fields after adding
       state.newExamName = "";
       state.newExamCFU = 6;
 
@@ -210,11 +261,21 @@ createApp({
     }
 
     // Helpers
+    /**
+     * Checks if an exam is available.
+     * @param {Object} exam - The exam object.
+     * @returns {boolean} True if available.
+     */
     function isAvailable(exam) {
       if (!pm.value) return false;
       return pm.value.isExamAvailable(exam);
     }
 
+    /**
+     * Gets possible tables for a plan item based on curriculum rules.
+     * @param {Object} planItem - The plan item.
+     * @returns {Array<string>} List of allowed table names.
+     */
     function getPossibleTables(planItem) {
       if (!pm.value || planItem.isCustom) return [];
       const exam = data.value.exams.find((e) => e.id === planItem.examId);
@@ -222,16 +283,31 @@ createApp({
       return pm.value.getAllowedTables(exam);
     }
 
+    /**
+     * Checks if an exam is currently in the plan.
+     * @param {string} examId - The exam ID.
+     * @returns {boolean} True if in plan.
+     */
     function isInPlan(examId) {
       return state.plan.some((p) => p.examId === examId);
     }
 
+    /**
+     * Determines the CSS class for an exam card status.
+     * @param {Object} exam - The exam object.
+     * @returns {string} CSS class name ('selected', 'disabled', or empty).
+     */
     function getExamStatusClass(exam) {
       if (isInPlan(exam.id)) return "selected";
       if (!isAvailable(exam)) return "disabled";
       return "";
     }
 
+    /**
+     * Gets the color associated with a pillar.
+     * @param {string} pillar - The pillar name.
+     * @returns {string} Hex color code.
+     */
     function getPillarColor(pillar) {
       const colors = {
         "INTERACTION AND MULTIMEDIA": "#f472b6", // pink-400
@@ -243,19 +319,34 @@ createApp({
       return colors[pillar] || "#cbd5e1";
     }
 
+    /**
+     * Returns style object for pillar border color.
+     * @param {string} pillar - The pillar name.
+     * @returns {Object} Style object.
+     */
     function getPillarStyle(pillar) {
       return { borderLeftColor: getPillarColor(pillar) };
     }
 
+    /**
+     * Gets localized text for the next availability of an exam.
+     * @param {Object} exam - The exam object or plan item.
+     * @returns {string} Availability info string.
+     */
     function getNextAvailability(exam) {
       if (!pm.value) return "";
-      // Se passiamo un oggetto del piano (che ha examId), cerchiamo l'esame originale
+      // If passing a plan object (which has examId), search for the original exam
       const target = exam.examId
         ? data.value.exams.find((e) => e.id === exam.examId)
         : exam;
       return pm.value.getNextAvailabilityInfo(target);
     }
 
+    /**
+     * Formats the list of tables an exam belongs to for display.
+     * @param {Object} exam - The exam object.
+     * @returns {string} Formatted string of tables.
+     */
     function getDisplayTables(exam) {
       if (!exam.rawTable) return t("Facoltativi");
 
@@ -263,16 +354,19 @@ createApp({
       const allTables = exam.rawTable.split("|").map((t) => t.trim());
 
       if (currentCurriculum === "F94") {
-        // Filtra solo A, B, C
+        // Filter only A, B, C
         const f94Tables = allTables.filter((t) => ["A", "B", "C"].includes(t));
         return f94Tables.length > 0 ? f94Tables.join(" | ") : t("Facoltativi");
       } else {
-        // Filtra solo 1, 2
+        // Filter only 1, 2
         const fbaTables = allTables.filter((t) => ["1", "2"].includes(t));
         return fbaTables.length > 0 ? fbaTables.join(" | ") : t("Facoltativi");
       }
     }
 
+    /**
+     * Resets the entire plan after user confirmation.
+     */
     function resetPlan() {
       if (confirm(t("reset_confirm"))) {
         pm.value.reset();
@@ -280,6 +374,9 @@ createApp({
       }
     }
 
+    /**
+     * Generates and triggers a download of the current plan as a CSV file.
+     */
     function downloadCSV() {
       function getType(item) {
         if (item.isCustom && item.table === "Obbligatori") return t("csv_mandatory");
@@ -301,7 +398,7 @@ createApp({
         };
       });
 
-      // Utilizziamo PapaParse (già incluso nel progetto)
+      // Use PapaParse (already included in the project)
       const csv = Papa.unparse(exportData);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
