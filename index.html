@@ -92,7 +92,8 @@
         </header>
 
         <main class="flex-1 flex md:overflow-hidden relative flex-col md:flex-row">
-          <div v-if="!initialized" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-100/60 backdrop-blur-md p-4">
+          <div v-if="!initialized" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-100/60 backdrop-blur-md p-4 overflow-y-auto">
+          <!-- <div v-if="!initialized" class="absolute inset-0 z-30 flex items-center justify-center bg-slate-100/60 backdrop-blur-md p-4"> -->
             <div class="glass max-w-lg w-full p-8 rounded-3xl shadow-2xl transform transition-all hover:scale-[1.01]">
               <div class="text-center mb-8">
                 <div class="w-16 h-16 bg-blue-100 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl shadow-inner">
